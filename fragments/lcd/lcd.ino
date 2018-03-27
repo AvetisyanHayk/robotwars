@@ -23,7 +23,7 @@ void setup()
   Serial.write("****\n");
   lcd.setCursor(0,2);  // Set the cursor at the 1st column and 3rd row
   lcd.print("Lets win on Friday!");
-  Serial.write("Thi is a demo text\n");
+  Serial.write("This is a demo text\n");
   lcd.setCursor(8,3);  // Set the cursor at the 9th column and 4th row
   lcd.print("****");
   Serial.write("****\n");
