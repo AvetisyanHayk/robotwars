@@ -1,24 +1,24 @@
-const byte IRR = A0;
-const byte IRT = 5;
+const byte IR_R = A0;
+const byte IR_T = 12;
 
 void setup() {
-  pinMode(IRR, INPUT);
-  pinMode(IRT, OUTPUT);
+  pinMode(IR_R, INPUT);
+  pinMode(IR_T, OUTPUT);
   Serial.begin(9600);
   /* Intel */
-  attachInterrupt(IRR, readSensor, FALLING);
+  attachInterrupt(IR_R, readSensor, FALLING);
   
 
   /* Arduino 
-  attachInterrupt(digitalPinToInterrupt(IRR), readSensor, FALLING);
+  attachInterrupt(digitalPinToInterrupt(IR_R), readSensor, FALLING);
   */
 }
 
 void loop() {
-  analogRead(IRR);
-  digitalWrite(IRT, HIGH);
+  analogRead(IR_R);
+  digitalWrite(IR_T, HIGH);
   delay(5);
-  digitalWrite(IRT, LOW);
+  digitalWrite(IR_T, LOW);
   delay(1000);
 }
 
