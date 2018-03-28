@@ -6,7 +6,7 @@
 void setup()
 {
   pinMode(M3_ANGLE, OUTPUT);
-  randomSeed(analogRead(A0));
+  //randomSeed(analogRead(A0));
   reset();
 }
 
@@ -23,8 +23,8 @@ void loop()
   
   void generator(){
     // int time = random(1, 5);
-    int time =(analogRead(1)%100)*10+1000;
-    // int time = random(500,6000);
+    //int time =(analogRead(1)%100)*10+1000;
+    int time = random(500,6000);
 
      
     if( digitalRead(13) == HIGH )      
