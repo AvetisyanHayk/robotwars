@@ -7,11 +7,8 @@
 
 LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
 
-const byte LED = 10;
-
 void setup()  
 {
-  pinMode(LED, OUTPUT);
   Serial.begin(9600);
   lcd.backlight();
   lcd.begin(16,2); // Initialize LCD
@@ -33,10 +30,3 @@ void loop()
 { 
 
 }
-
-void switchLedOnFor(int milliseconds) {
-  pinMode(LED, HIGH);
-  delay(milliseconds);
-  pinMode(LED, LOW);
-}
-

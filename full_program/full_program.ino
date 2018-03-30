@@ -1,3 +1,18 @@
+#include <Servo.h>
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+
+/*
+ * COMMANDS
+ */
+const char GO_FORWARD = 'u';
+const char GO_BACKWARD = 'd';
+const char GO_LEFT = 'l';
+const char GO_RIGHT = 'r';
+const char FIRE = 'f';
+const char HIT = 'h';
+
 /*
  * DIGITAL PINS
  */
@@ -6,8 +21,8 @@
 #define M1_FWD 2          // Motor 1 Forwards
 #define M1_ENA 3          // Motor 1 Enable
 #define M1_REV 4          // Motor 1 Backwards
-#define IR_T 5            // IR Transmitter
-#define LED_STRIP 6       // LED Strip
+#define IR1_T 5            // IR Transmitter
+#define IR2_T 6       // LED Strip
 #define M2_FWD 7          // Motor 2 Forwards
 #define M2_REV 8          // Motor 2 Backwards
 #define M2_ENA 9          // Motor 2 Enable
@@ -37,16 +52,56 @@ int m2_ena = 0;
 int m2_dir = FWD;
 int m2_spd = 0;
 
-float distance;
+// Servo global variables
+Servo servo;
+int servo_angle = 0;
 
+// IR global variables
+int hitCount = 0;
+
+// Distance sensor global variables
+int distance;
+
+// Buzzer global variables
+const int c = 261;
+const int d = 294;
+const int e = 329;
+const int f = 349;
+const int g = 391;
+const int gS = 415;
+const int a = 440;
+const int aS = 455;
+const int b = 466;
+const int cH = 523;
+const int cSH = 554;
+const int dH = 587;
+const int dSH = 622;
+const int eH = 659;
+const int fH = 698;
+const int fSH = 740;
+const int gH = 784;
+const int gSH = 830;
+const int aH = 880;
+int buzzerCounter = 0;
+const int buzzerTempo = (6000/128) * 4;
+
+// LCD Global Variables
+String lcd_line1 = "Pietje Pek !";
+String lcd_line2 = "1-BEL-666";
 /*
  * SETUP
  */
 void setup() {
+  setupBluetooth();
   setupHBridge();
   setupIR();
   setupDistanceSensors();
   setupDisco();
+}
+
+void setupBluetooth() {
+  Serial.begin(9600);
+  Serial1.begin(9600);
 }
 
 void setupHBridge() {
@@ -61,36 +116,202 @@ void setupHBridge() {
 
 void setupIR() {
   pinMode(IR_R, INPUT);
-  pinMode(IR_T, OUTPUT);
+  pinMode(IR1_T, OUTPUT);
+  pinMode(IR2_T, OUTPUT);
   attachInterrupt(IR_R, readSensor, FALLING);
 }
 
 void setupDistanceSensors() {
   pinMode(SDIST_ECHO, INPUT); 
   pinMode(SDIST_TRIGGER, OUTPUT); 
-  digitalWrite(SDIST_TRIGGER, LOW); 
 }
 
 void setupDisco() {
   pinMode(BUZZER, OUTPUT);
-  pinMode(LED_STRIP, OUTPUT);
-  pinMode(M3_SERVO, OUTPUT);
+  servo.attach(M3_SERVO);
 }
 
 /*
  * LOOP
  */
 void loop() {
-  runDistanceSensor();
+  runBluetooth();
+  // runWheels();
+  runIR();
+  // runDistanceSensor2();
+  runDisco();
 }
 
-void runDistanceSensor() {
+void runBluetooth() {
+  if(Serial1.available() > 0){
+    char state = Serial1.read();
+    Serial.println(state);
+    handleState(state);
+  }
+  if(Serial.available() > 0){
+    char inByte = Serial.read();
+    Serial1.println(inByte);
+  }
+}
+
+void handleState(char state) {
+  switch(state) {
+    case GO_FORWARD:
+      goForward();    break;
+    case GO_BACKWARD:
+      goBackward();   break;
+    case GO_LEFT:
+      goLeft();       break;
+    case GO_RIGHT:
+      goRight();      break;
+    case STOP_GOING:
+      stopGoing();
+    case FIRE:
+      fire();         break;
+    
+  }
+}
+
+void runWheels() {
+  m1_spd = 155;
+  m2_spd = 155;
+  enableM(M1);
+  enableM(M2);
+  startM1();
+  startM2();
+}
+
+void runIR() {
+  digitalWrite(IR1_T, HIGH);
+  delay(5);
+  digitalWrite(IR1_T, LOW);
+  delay(1000);
+}
+
+void runDistanceSensor2() {
+  digitalWrite(SDIST_TRIGGER, LOW); 
   delay(200); 
   digitalWrite(SDIST_TRIGGER, HIGH); 
-  delay(1000);
+  delay(1000); 
   digitalWrite(SDIST_TRIGGER, LOW);
-  distance = pulseIn(SDIST_ECHO, HIGH) / 58;
-  delay(200); 
+  float distance = pulseIn(SDIST_ECHO, HIGH); 
+  distance = distance / 58; 
+  Serial.print(distance); 
+  Serial.println(" cm");
+  delay(100); 
+}
+
+void runDisco() {
+  // runServo();
+  runLCDDisplay();
+  // runBuzzer();
+}
+
+void runServo() {
+  int time = random(0, 15);
+  for (servo_angle = 0; servo_angle <= 180; servo_angle += 1) {
+    servo.write(servo_angle);
+    delay(time);
+  }
+  for (servo_angle = 180; servo_angle >= 0; servo_angle -= 1) {
+    servo.write(servo_angle);
+    delay(time);
+  }
+}
+
+void runLCDDisplay() {
+  lcd.backlight();
+  lcd.begin(16,2);
+  lcd.setCursor(2,0);
+  lcd.print(lcd_line1);
+  lcd.setCursor(3,1);
+  lcd.print(lcd_line2);
+}
+
+void runBuzzer() {
+  firstSection();
+  secondSection();
+ 
+  //Variant 1
+  beep(f, 250);  
+  beep(gS, 500);  
+  beep(f, 350);  
+  beep(a, 125);
+  beep(cH, 500);
+  beep(a, 375);  
+  beep(cH, 125);
+  beep(eH, 650);
+  delay(500);
+  secondSection();
+ 
+  //Variant 2
+  beep(f, 250);  
+  beep(gS, 500);  
+  beep(f, 375);  
+  beep(cH, 125);
+  beep(a, 500);  
+  beep(f, 375);  
+  beep(cH, 125);
+  beep(a, 650);  
+ 
+  delay(650);
+}
+
+void firstSection() {
+  beep(a, 500);
+  beep(a, 500);    
+  beep(a, 500);
+  beep(f, 350);
+  beep(cH, 150);  
+  beep(a, 500);
+  beep(f, 350);
+  beep(cH, 150);
+  beep(a, 650);
+  delay(500);
+  beep(eH, 500);
+  beep(eH, 500);
+  beep(eH, 500);  
+  beep(fH, 350);
+  beep(cH, 150);
+  beep(gS, 500);
+  beep(f, 350);
+  beep(cH, 150);
+  beep(a, 650);
+  delay(500);
+}
+ 
+void secondSection() {
+  beep(aH, 500);
+  beep(a, 300);
+  beep(a, 150);
+  beep(aH, 500);
+  beep(gSH, 325);
+  beep(gH, 175);
+  beep(fSH, 125);
+  beep(fH, 125);    
+  beep(fSH, 250);
+  delay(325);
+  beep(aS, 250);
+  beep(dSH, 500);
+  beep(dH, 325);  
+  beep(cSH, 175);  
+  beep(cH, 125);  
+  beep(b, 125);  
+  beep(cH, 250);  
+  delay(350);
+}
+
+void beep(int note, int duration) {
+  tone(BUZZER, note, buzzerTempo / duration);
+  delay(buzzerTempo / duration);
+  if(buzzerCounter % 2 == 0) {
+    delay(duration);
+  } else {
+    delay(duration);
+  }
+  noTone(BUZZER);
+  delay(50);
+  buzzerCounter++;
 }
 
 /*
@@ -113,32 +334,46 @@ void disableM(byte motor) {
   }
 }
 
-void disableMotors() {
+void cmdStop() {
   disableM(M1);
   disableM(M2);
 }
 
+void cmdGoForward() {
+  
+}
+
+void cmdGoBackwardsLeft() {
+  
+}
+
 void reverseM(byte motor) {
   if (motor == M1) {
-    reverseM1();
+    if (m1_dir == FWD) {
+      m1_dir = BWD;
+    } else if (m1_dir == BWD) {
+      m1_dir = FWD;
+    }
   } else if (motor == M2) {
-    reverseM2();
+    if (m2_dir == FWD) {
+      m2_dir = BWD;
+    } else if (m2_dir == BWD) {
+      m2_dir = FWD;
+    }
   }
 }
 
-void reverseM1() {
+void startM1() {
   if (m1_dir == FWD) {
     digitalWrite(M1_FWD, HIGH);
     digitalWrite(M1_REV, LOW);
-    m1_dir = BWD;
   } else if (m1_dir == BWD) {
     digitalWrite(M1_FWD, LOW);
     digitalWrite(M1_REV, HIGH);
-    m1_dir = FWD;
   }
 }
 
-void reverseM2() {
+void startM2() {
   if (m2_dir == FWD) {
     digitalWrite(M2_FWD, HIGH);
     digitalWrite(M2_REV, LOW);
@@ -150,11 +385,12 @@ void reverseM2() {
   }
 }
 
-
 /*
  * IR Functionality
  */
 
  void readSensor() {
-  Serial.write("We have been hit!");
+  Serial.print(++hitCount);
+  Serial.write(" We have been hit!\n");
+  Serial1.write(HIT);
 }

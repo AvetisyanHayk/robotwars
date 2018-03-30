@@ -18,7 +18,7 @@ const int gH = 784;
 const int gSH = 830;
 const int aH = 880;
  
-const int BUZZER = 8;
+const int BUZZER = 11;
 /*
 const int ledPin1 = 12;
 const int ledPin2 = 13;
@@ -85,18 +85,16 @@ void beep(int note, int duration)
   //Play different LED depending on value of 'counter'
   if(counter % 2 == 0)
   {
-    /*
-    digitalWrite(ledPin1, HIGH);
+
+    //digitalWrite(ledPin1, HIGH);
     delay(duration);
-    digitalWrite(ledPin1, LOW);
-    */
+    //digitalWrite(ledPin1, LOW);
+
   }else
   {
-    /*
-    digitalWrite(ledPin2, HIGH);
+    // digitalWrite(ledPin2, HIGH);
     delay(duration);
-    digitalWrite(ledPin2, LOW);
-    */
+    // digitalWrite(ledPin2, LOW);
   }
  
   //Stop tone on BUZZER

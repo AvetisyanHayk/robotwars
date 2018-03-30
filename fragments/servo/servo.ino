@@ -1,42 +1,27 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <Servo.h>
 
-#define M3_ANGLE 10
 
-void setup()
-{
-  pinMode(M3_ANGLE, OUTPUT);
-  //randomSeed(analogRead(A0));
-  reset();
+Servo myservo;  // create servo object to control a servo
+// twelve servo objects can be created on most boards
+
+int pos = 0;    // variable to store the servo position
+
+void setup() {
+  myservo.attach(10);  // attaches the servo on pin 9 to the servo object
 }
 
-
-void loop()
-{
-  generator();
-  delay(300);
+void loop() {
+  int time = random(0, 15);
+  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(time);                       // waits 15ms for the servo to reach the position
+  }
+  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(time);                       // waits 15ms for the servo to reach the position
+  }
 }
-
-  void reset(){
-    digitalWrite(13, LOW);
-  }
-  
-  void generator(){
-    // int time = random(1, 5);
-    //int time =(analogRead(1)%100)*10+1000;
-    int time = random(500,6000);
-
-     
-    if( digitalRead(13) == HIGH )      
-      digitalWrite(13, LOW);  
-    else
-        digitalWrite(13, HIGH);
-    
-    delay(time);
-    // delay(time*1000);
-  }
-
-
 
 
 
