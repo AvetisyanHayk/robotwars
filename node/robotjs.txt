@@ -1,0 +1,368 @@
+﻿var express = require('express');
+var app = express();
+var path = require("path");
+var http = require("http");
+var xbox = require('xbox-controller-node');
+var serialport = require('serialport');
+
+var buttonPressed;
+
+const hostname = '172.31.11.90';
+const port = 3000;
+
+
+//var playerId = "daae8fcc-146b-4618-a917-c070b6f6582d";
+//var gameId = "58";
+
+var playerId;
+var gameId;
+
+var name = "PietjePek";
+var ammo;
+var health;
+
+
+
+
+
+// bluetooth
+
+var portname = process.argv[2];
+
+var myPort = new serialport(portname, {
+	bauttRate: 9600,
+	//parser:serialport.parsers.readline("\r\n")
+})
+
+
+myPort.on('open', onOpen);
+myPort.on('data', onrecieveData);
+myPort.on('error', showError)
+//rl.on('line', sendData);
+wss.on('connection', handleConnection);
+wss.on('error', showError);
+
+
+
+function onOpen()
+{
+	console.log("open connection");
+}
+
+
+//receiving data on the COM port and sending to the open connections
+function onrecieveData(data)
+{
+	if (data == "h")
+	{
+		hit();
+	}
+	
+	 
+	console.log("Received data: " + data);
+}
+
+
+
+function showError(error) 
+{
+   console.log('Serial port error: ' + error);
+}
+
+
+
+
+
+
+xbox.on('start', function () {
+  console.log('Start');
+  if (buttonPressed !== "start" )
+	logIn(769);
+	buttonPressed = "start";
+
+});
+
+xbox.on('back', function () {
+  console.log('back');
+  if (buttonPressed !== "back" )
+      getInfo();
+	buttonPressed = "back";
+});
+
+xbox.on('rb', function () {
+  console.log('rb');
+  if (buttonPressed !== "rb" )
+      fire();
+	buttonPressed = "rb";
+	myPort.write("f");
+});
+ 
+ 
+ xbox.on('lb', function () {
+  console.log('lb');
+  if (buttonPressed !== "lb" )
+      getAmmo();
+	buttonPressed = "lb";
+
+});
+
+ 
+
+
+
+ 
+//Manage sticks events 
+ 
+xbox.on('leftstickLeft', function () {
+  console.log('Moving [LEFTSTICK] LEFT');
+  if (buttonPressed !== "left" )
+  myPort.write("l");
+  buttonPressed = "left";
+  
+});
+ 
+xbox.on('leftstickLeft:release', function () {
+    console.log('Released [LEFTSTICK] LEFT');
+    if (buttonPressed !== "leftRelease" )
+    myPort.write("s");
+	buttonPressed = "leftRelease";
+  });
+
+
+
+
+
+
+xbox.on('leftstickRight', function () {
+  console.log('Moving [LEFTSTICK] RIGHT');
+
+  if (buttonPressed !== "right" )
+  myPort.write("r");
+  buttonPressed = "right";
+
+});
+
+xbox.on('leftstickRight:release', function () {
+    console.log('Released [LEFTSTICK] LEFT');
+    if (buttonPressed !== "rightRelease" )
+    myPort.write("s");
+	buttonPressed = "rightRelease";
+    
+  });
+ 
+
+
+
+ 
+xbox.on('leftstickDown', function () {
+  console.log('Moving [LEFTSTICK] DOWN');
+  if (buttonPressed !== "down" )
+  myPort.write("d");
+  buttonPressed = "down";
+
+});
+
+xbox.on('leftstickDown:release', function () {
+    console.log('Released [LEFTSTICK] LEFT');
+    if (buttonPressed !== "downRelease" )
+    myPort.write("s");
+	buttonPressed = "downRelease";
+    
+  });
+ 
+
+
+
+
+
+
+xbox.on('leftstickUp', function () {
+  console.log('Moving [LEFTSTICK] UP');
+        if (buttonPressed !== "up" )
+        myPort.write("u");
+        buttonPressed = "up";
+
+});
+
+xbox.on('leftstickUp:release', function () {
+    console.log('Released [LEFTSTICK] LEFT');
+    if (buttonPressed !== "upRelease" )
+    myPort.write("s");
+	buttonPressed = "upRelease";
+  });
+ 
+
+
+
+
+
+function logIn(newGameId) {
+
+    var options = {
+        hostname: hostname,
+        port: port,
+        path: '/game/' + newGameId + '/player',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+    };
+    var req = http.request(options, function(res) {
+        res.on('data', function(body) {
+
+            name = JSON.parse(body).result.name;
+            playerIdNew = JSON.parse(body).result.id;
+            ammo = JSON.parse(body).result.ammo;
+            health = JSON.parse(body).result.health;
+
+            playerId = playerIdNew;
+            gameId = newGameId;
+
+            console.log('POST login:');
+            console.log('PlayerId: ' + playerId);
+            console.log('GameId: ' + gameId);
+            console.log('name: ' + name);
+            console.log('ammo: ' + ammo);
+            console.log('health: ' + health);
+
+        });
+
+    });
+    req.write("name=" + name);
+    req.on('error', function(e) {
+        console.log('problem with request: ' + e.message);
+    });
+    req.end();
+}
+
+
+
+
+function getInfo() {
+
+    var options = {
+        hostname: hostname,
+        port: port,
+        path: '/game/' + gameId,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    };
+    var req = http.request(options, function(res) {
+        res.on('data', function(body) {
+            console.log('GET info game:');
+            console.log('Body: ' + body);
+
+            console.log('PlayerId: ' + playerId);
+            console.log('GameId: ' + gameId);
+            console.log('ammo: ' + ammo);
+            console.log('health: ' + health);
+        });
+    });
+    req.on('error', function(e) {
+        console.log('problem with request: ' + e.message);
+    });
+    req.end();
+}
+
+
+
+
+
+function getAmmo() {
+
+    var options = {
+        hostname: hostname,
+        port: port,
+        path: '/game/' + gameId + '/player/' + playerId + '/ammo',
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    };
+    var req = http.request(options, function(res) {
+        res.on('data', function(body) {
+            console.log('GET ammo:');
+            console.log('Body: ' + body);
+        });
+    });
+    req.on('error', function(e) {
+        console.log('problem with request: ' + e.message);
+    });
+    req.end();
+
+}
+
+
+function fire() {
+
+    var options = {
+        hostname: hostname,
+        port: port,
+        path: '/game/' + gameId + '/player/' + playerId + '/ammo',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    };
+    var req = http.request(options, function(res) {
+        res.on('data', function(body) {
+            console.log('POST ammo // FIRE:');
+            console.log('Body: ' + body);
+        });
+    });
+    req.on('error', function(e) {
+        console.log('problem with request: ' + e.message);
+    });
+    req.end();
+
+}
+
+
+function hit() {
+
+    var options = {
+        hostname: hostname,
+        port: port,
+        path: '/game/' + gameId + '/player/' + playerId + '/hit',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    };
+    var req = http.request(options, function(res) {
+        res.on('data', function(body) {
+            console.log('POST HIT:');
+            console.log('Body: ' + body);
+        });
+    });
+    req.on('error', function(e) {
+        hit();
+        console.log('problem with request: ' + e.message);
+    });
+    req.end();
+
+}
+
+
+
+// log in with gameId
+//logIn(76);
+
+//getInfo();
+//getAmmo();
+//fire();
+//hit();
+
+
+
+
+
+var server = app.listen(8081, function() {
+
+    var host = server.address().address
+    var port = server.address().port
+
+    console.log("Example app listening at http://%s:%s", host, port)
+})
