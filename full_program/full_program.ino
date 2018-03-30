@@ -101,8 +101,8 @@ void setup() {
   setupBluetooth();
   setupHBridge();
   setupIR();
-  setupDistanceSensors();
-  setupDisco();
+  // setupDistanceSensors();
+  // setupDisco();
 }
 
 void setupBluetooth() {
@@ -143,7 +143,7 @@ void setupDisco() {
 void loop() {
   runBluetooth();
   // runDistanceSensor();
-  runDisco();
+  // runDisco();
 }
 
 void runBluetooth() {
@@ -291,21 +291,47 @@ void beep(int note, int duration) {
  * MOTOR FUNCTIONALITY
  */
 
+
+
+
+
+/*
+ * IR Functionality
+ */
+
+ void readSensor() {
+  Serial.print(++hitCount);
+  Serial.write(" We have been hit!\n");
+  Serial1.write(HIT);
+}
+
+/*
+ * Car Manupulation Commands
+ */
+
+void handleState(char state) {
+  Serial.println("Handling state...");
+  Serial.println(state);
+  if (state == 'u') {
+    goForward();
+  } else if (state =='d') {
+    goBackward();
+  } else if (state == 'l') {
+    goLeft();
+  } else if (state == 'r') {
+    goRight();
+  } else if (state == 'f') {
+    fire();
+  } else if (state == 's') {
+    stopGoing();
+  }
+}
+
 void enableM(byte motor) {
   if (motor == M1) {
     analogWrite(M1_ENA, m1_spd);
-    if (m1_spd > 0) {
-      startM1();
-    } else {
-      stopM1();
-    }
   } else if (motor == M2) {
     analogWrite(M2_ENA, m2_spd);
-    if (m2_spd > 0) {
-      startM2();
-    } else {
-      stopM2();
-    }
   }
 }
 
@@ -323,52 +349,9 @@ void startM2() {
   if (m2_dir == FWD) {
     digitalWrite(M2_FWD, HIGH);
     digitalWrite(M2_REV, LOW);
-    m1_dir = FWD;
-  } else if (m1_dir == REV) {
+  } else if (m2_dir == REV) {
     digitalWrite(M2_FWD, LOW);
     digitalWrite(M2_REV, HIGH);
-    m2_dir = REV;
-  }
-}
-
-void stopM1() {
-  digitalWrite(M1_FWD, LOW);
-  digitalWrite(M1_REV, LOW);
-}
-
-void stopM2() {
-  digitalWrite(M2_FWD, LOW);
-  digitalWrite(M2_REV, LOW);
-}
-
-/*
- * IR Functionality
- */
-
- void readSensor() {
-  Serial.print(++hitCount);
-  Serial.write(" We have been hit!\n");
-  Serial1.write(HIT);
-}
-
-/*
- * Car Manupulation Commands
- */
-
-void handleState(char state) {
-  switch(state) {
-    case GO_FORWARD:
-      goForward();    break;
-    case GO_BACKWARD:
-      goBackward();   break;
-    case GO_LEFT:
-      goLeft();       break;
-    case GO_RIGHT:
-      goRight();      break;
-    case STOP_GOING:
-      stopGoing();    break;
-    case FIRE:
-      fire();         break;
   }
 }
 
@@ -379,6 +362,8 @@ void goForward() {
   m2_dir = FWD;
   enableM(M1);
   enableM(M2);
+  startM1();
+  startM2();
 }
 
 void goBackward() {
@@ -388,6 +373,8 @@ void goBackward() {
   m2_dir = REV;
   enableM(M1);
   enableM(M2);
+  startM1();
+  startM2();
 }
 
 void goLeft() {
@@ -395,6 +382,8 @@ void goLeft() {
   m2_spd = MAX_SPEED;
   enableM(M1);
   enableM(M2);
+  startM1();
+  startM2();
 }
 
 void goRight() {
@@ -402,23 +391,32 @@ void goRight() {
   m2_spd = 5;
   enableM(M1);
   enableM(M2);
+  startM1();
+  startM2();
+}
+
+void disableM(byte motor) {
+  if (motor == M1) {
+    digitalWrite(M1_ENA, 0);
+  } else if (motor == M2) {
+    digitalWrite(M2_ENA, 0);
+  }
 }
 
 void stopGoing() {
-  m1_spd = 0;
-  m2_spd = 0;
-  enableM(M1);
-  enableM(M2);
+  disableM(M1);
+  disableM(M2);
 }
 
 void fire() {
-  int currentShot = 0;
-  while (currentShot < SHOOT_COUNT) {
+  while (hitCount < SHOOT_COUNT) {
     digitalWrite(IR1_T, HIGH);
     digitalWrite(IR2_T, HIGH);
     delay(5);
     digitalWrite(IR1_T, LOW);
     digitalWrite(IR2_T, LOW);
     delay(1000);
+    hitCount++;
   }
+  hitCount = 0;
 }

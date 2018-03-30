@@ -41,16 +41,22 @@ void loop() {
 
 void testMotor() {
   m1_spd = 100;
+  m2_spd = 100;
+  enableM(M1);
+  enableM(M2);
+  delay(1000);
+  disableM(M1);
+  disableM(M2);
+  delay(1000);
+  reverseM(M1);
+  reverseM(M2);
   enableM(M1);
   delay(1000);
   disableM(M1);
+  disableM(M2);
   delay(1000);
   reverseM(M1);
-  enableM(M1);
-  delay(1000);
-  disableM(M1);
-  delay(1000);
-  reverseM(M1);
+  reverseM(M2);
 }
 
 void enableM(byte motor) {
